@@ -1,4 +1,4 @@
-# Rauth-Stability-Criterion
+# Routh-Stability-Criterion
 
 This is a python project that given the characteristic equation of the system, for example on this form:
 s^5+s^4+10s^3+72s^2+152s+240
