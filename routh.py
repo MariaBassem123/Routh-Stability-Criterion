@@ -1,4 +1,3 @@
-from pprint import pprint
 import numpy as np
 from sympy import *
 
@@ -197,16 +196,17 @@ else:
         # print("new_row = ",new_row)
         routh_array.append(new_row)
 first_column,flag,RHS_count = isStable(routh_array)
+
 print("=========================================")
 print("Answers: ")
-print("routh array = ")
+print("Routh Array = ")
 print_routh_table(routh_array,powers_of_s)
 print("System State: ", end="")
 if flag == 'yes':
     print("Stable")
 elif flag == 'no':
     print("Unstable")
-else: # could be marginal
+else: # Marginal
     print("Marginally stable")
 
 print("Number of roots in RHS: ", RHS_count)
