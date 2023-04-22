@@ -1,32 +1,37 @@
 from pprint import pprint
-
-## fadel 1. n check the stability of system, n count the number of poles in 
-## RHS and LHS and on jw axis
-## 2. handle the whole row being zero 
+import numpy as np
+from sympy import *
 
 # -------------------- Examples --------------------
 
-# s^5+s^4+10s^3+72s^2+152s+240 ==> in the project
-# s^2+2s+1 ==> in a video on youtube
-# 2s^5+3s^4+2s^3+3s^2+2s+1 ==> epsilon
-# s^5+2s^4+24s^3+48s^2-25s-50 ==> whole row = 0 (unstable)
-# s^5+7s^4+6s^3+42s^2+8s+56 ==> whole row = 0 (marginally stable)
-# s^5+2s^4+2s^3+4s^2+11s+10
-# s^4+10s^3+35s^2+50s+264 ==> 3ady
+# s^5+s^4+10s^3+72s^2+152s+240 ==> in the project (unstable) [2 roots in RHS]
+# s^2+2s+1 ==> in a video on youtube (stable) 
+# 2s^5+3s^4+2s^3+3s^2+2s+1 ==> epsilon --> unstable [2 root in RHS]
+# s^5+2s^4+24s^3+48s^2-25s-50 ==> whole row = 0 (unstable) [1 in RHS]
+# s^5+7s^4+6s^3+42s^2+8s+56 ==> whole row = 0 (marginally stable) [1 LHS, 4 jw]
+# s^5+2s^4+2s^3+4s^2+11s+10 ==> unstable [2 in RHS]
+# s^4+10s^3+35s^2+50s+264 ==> unstable [2 in RHS]
+# s^4+2s^3+6s^2+4s+1 --> stable system
+# s^6+2s^5+8s^4+12s^3+20s^2+16s+16 --> Marginally stable 
 
 # -------------------- Global Variables --------------------
-coeffs = []
+coefficients = []
 powers_of_s = []
 exponents = []
 routh_array = []
 epsilon = 1e-10
+zero_row = 0 # zero means no row equal zero
+imj_count = 0
 
 # -------------------- function definition --------------------
 def parse_input(input):
     if input.find('+') != -1:
-        up = input.replace('+', ' ').replace('-', ' -').split()
-        print(len(up))
-        for str in up:
+        parsed = input.replace(' ','').replace('+', ' ').replace('-', ' -').replace('**', '^').replace('*', '').split()
+        # print("parsed input = ",parsed)
+        coeffs = []
+        powers_of_s = []
+        exponents = []
+        for str in parsed:
             coeff = ''
             s_power = ''
             exponentFlag = False # not an s^ sth
@@ -34,7 +39,6 @@ def parse_input(input):
                 if i != 's' and not exponentFlag:
                     coeff += i
                 else:
-                    # print("i = ", i)
                     s_power += i
                     exponentFlag = True
             if coeff == '':
@@ -48,10 +52,10 @@ def parse_input(input):
         for i in powers_of_s:
             i = i.replace('s^','')
             exponents.append(i)
-        # print(up)
-        print("coeffs = " , coeffs)
-        print("powers_of_s = ", powers_of_s)
-        print("exponents = ", exponents)
+        # print("coeffs = " , coeffs)
+        # print("powers_of_s = ", powers_of_s)
+        # print("exponents = ", exponents)
+    return coeffs,powers_of_s,exponents
 
 def initialize_routh_array(coeffs):
     first_row = []
@@ -64,62 +68,138 @@ def initialize_routh_array(coeffs):
             second_row.append(col)
         i += 1
 
-    # #Check if the last element of first_row is zero. If not append zero
-    # if first_row[-1] != 0:
-    #     first_row.append(0)
-
     while len(second_row) < len(first_row):
         second_row.append(0)
     first_row = [float(i) for i in first_row]
     second_row = [float(i) for i in second_row]
     return first_row, second_row
-        
+
+def fix_zero_row(row,previous):
+    aux_order = 0
+    # print("The whole row equals zero. So we replace it with the derivative of the previous row")
+    global zero_row # refers to the global variable
+    zero_row += 1
+    index = len(routh_array)-1
+    cur_pow = exponents[index]
+    equation = ''
+    for x in range(0,len(previous)):
+        equation += str(previous[x]) + '*s**' + str(cur_pow)
+        cur_pow = int(cur_pow) - 2
+        if not (x == len(previous)-1):
+            if x < len(previous) and np.sign(previous[x+1]) == -1:
+                continue
+            equation += '+'
+        if cur_pow < 0: 
+            # print("cur_pow is negative in fn eval_next_row.")
+            # print("I am here")
+            # print("cur_pow = ",cur_pow)
+            continue
+    s = symbols('s')
+    df = diff(equation,s)
+    print("equation = ",equation)
+    derivative = parse_input(str(df))
+    print("derivative = ",derivative)
+    exp = [int(i) for i in derivative[2]]
+    aux_order = max(exp) + 1
+    # print("aux_order = ",aux_order)
+    row = derivative[0]
+    while len(row) < len(previous):
+        row.append(0)
+    row = [float(i) for i in row]
+    return row,aux_order
+
 def eval_next_row(previous, before_previous):
     # given the last 2 rows in the table, we can compute the next row
-    row = []
-    count = 0
-    # check if a row has all elements = zero 
-    for i in previous:
-        if i == 0: 
-            count += 1
-    if count == len(previous):
-        print("The whole row equals zero. So we replace it with the derivative of the previous row")
-        # do something
-        return [] # change this
-    
-    # previous row doesn't have all zeros
+    # previous row doesn't have all zeros (Normal Computation)
     # before_previous ==> c   d
     # previous ==> a    b
-
+    row = []
     a = previous[0]
     c = before_previous[0]
-    
     if a == 0.0:
-        print("Replacing a with epsilon")
-        # replace it with very small number epsilon because we can't divide by 0
+        #Replace it with very small number epsilon because we can't divide by 0
         a = epsilon
     for col in range(0, len(previous)):
         val = 0.0
-        if col + 1 < len(previous):
-            #
+        if (col + 1) < len(previous):
             d = before_previous[col+1]
             b = previous[col+1]
             val = (a*d-b*c)/a
-
         row.append(val)
-    return row
+        count = 0
+    for i in row:
+        if i == 0: 
+            count += 1
+    global imj_count
+    # check if a row has all elements = zero 
+    if count == len(row):
+        row,imj_count = fix_zero_row(row,previous)
+        print("imj_count = ", imj_count)
+    return row,imj_count
+
+def isStable(routh_array):
+    first_column = []
+    num_rows = len(routh_array)
+    for x in range(0,num_rows):
+        first_column.append(routh_array[x][0])
+    
+    flag = 'yes' # stability flag
+    c = 0
+    count = 0
+    sign = np.sign(first_column[0])
+    for i in range(1,len(first_column)):
+        global zero_row
+        if (np.sign(first_column[i]) == sign and zero_row > 0) or (np.sign(first_column[i]) == 0):
+            flag = 'could be marginal'
+        elif not(np.sign(first_column[i]) == sign):
+            flag = 'no'
+            c += 1
+        elif np.sign(first_column[i]) == sign and c > 0:
+            count =+ c
+            c = 0
+        if not(np.sign(first_column[i]) == 0):
+            sign = np.sign(first_column[i])
+        # print("first_column[i] = ", first_column[i])
+        # print("c = ", c)
+        # print("count = ", count)
+    if not(c == 0):
+        count =+ c
+        c = 0
+    return first_column,flag,count
 
 
 # -------------------- beginning of the program --------------------   
 input = input('Enter characteristic equation:\n')
-
-parse_input(input)
-first_row, second_row = initialize_routh_array(coeffs= coeffs)
+print('\n')
+coefficients,powers_of_s,exponents = parse_input(input)
+first_row, second_row = initialize_routh_array(coeffs= coefficients)
 routh_array.append(first_row)
 routh_array.append(second_row)
-for i in range(0,len(powers_of_s)-2):    
-    new_row = eval_next_row(routh_array[-1], routh_array[-2])
-    routh_array.append(new_row)
+system_order = max(exponents)
+# print("system order = ",system_order)
 
+if system_order == 1:
+    # no need to compute other rows, only the first and second rows
+    # checking the stability of the system
+    first_column = isStable(routh_array, coefficients)
+
+else:
+    for i in range(0,len(powers_of_s)-2):    
+        new_row,imj_count = eval_next_row(routh_array[-1], routh_array[-2])
+        # print("new_row = ",new_row)
+        routh_array.append(new_row)
+first_column,flag,RHS_count = isStable(routh_array)
 print("routh array = ")
+print(routh_array)
 pprint(routh_array)
+if flag == 'yes':
+    print("System is stable")
+elif flag == 'no':
+    print("System is unstable")
+else: # could be marginal
+    print("System is marginally stable")
+
+print("Number of roots in RHS: ", RHS_count)
+# print("system_order = ",int(system_order))
+print("Number of roots in LHS: ", int(system_order) - (RHS_count+imj_count))
+print("Number of roots on jw axis: ",imj_count)
