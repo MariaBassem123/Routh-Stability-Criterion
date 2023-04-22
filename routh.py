@@ -24,6 +24,15 @@ zero_row = 0 # zero means no row equal zero
 imj_count = 0
 
 # -------------------- function definition --------------------
+def print_routh_table(routh_array,powers_of_s):
+    for i in range(0,len(routh_array)):
+        print(powers_of_s[i],"| ",end="")
+        for j in range(0,len(routh_array[i])):
+            print(routh_array[i][j]," ",end="")
+        print("\n")
+
+
+
 def parse_input(input):
     if input.find('+') != -1:
         parsed = input.replace(' ','').replace('+', ' ').replace('-', ' -').replace('**', '^').replace('*', '').split()
@@ -170,7 +179,6 @@ def isStable(routh_array):
 
 # -------------------- beginning of the program --------------------   
 input = input('Enter characteristic equation:\n')
-print('\n')
 coefficients,powers_of_s,exponents = parse_input(input)
 first_row, second_row = initialize_routh_array(coeffs= coefficients)
 routh_array.append(first_row)
@@ -189,17 +197,18 @@ else:
         # print("new_row = ",new_row)
         routh_array.append(new_row)
 first_column,flag,RHS_count = isStable(routh_array)
+print("=========================================")
+print("Answers: ")
 print("routh array = ")
-print(routh_array)
-pprint(routh_array)
+print_routh_table(routh_array,powers_of_s)
+print("System State: ", end="")
 if flag == 'yes':
-    print("System is stable")
+    print("Stable")
 elif flag == 'no':
-    print("System is unstable")
+    print("Unstable")
 else: # could be marginal
-    print("System is marginally stable")
+    print("Marginally stable")
 
 print("Number of roots in RHS: ", RHS_count)
-# print("system_order = ",int(system_order))
 print("Number of roots in LHS: ", int(system_order) - (RHS_count+imj_count))
 print("Number of roots on jw axis: ",imj_count)
