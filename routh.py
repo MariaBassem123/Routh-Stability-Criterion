@@ -26,8 +26,6 @@ def print_routh_table(routh_array,powers_of_s):
             print(routh_array[i][j]," ",end="")
         print("\n")
 
-
-
 def parse_input(input):
     if input.find('+') != -1:
         parsed = input.replace(' ','').replace('+', ' ').replace('-', ' -').replace('**', '^').replace('*', '').split()
