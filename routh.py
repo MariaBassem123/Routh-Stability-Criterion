@@ -2,16 +2,12 @@ import numpy as np
 from sympy import *
 
 # -------------------- Examples --------------------
-
+# There are more test cases in the "test cases.txt" file.
 # s^5+s^4+10s^3+72s^2+152s+240 ==> in the project (unstable) [2 roots in RHS]
-# s^2+2s+1 ==> in a video on youtube (stable) 
 # 2s^5+3s^4+2s^3+3s^2+2s+1 ==> epsilon --> unstable [2 root in RHS]
 # s^5+2s^4+24s^3+48s^2-25s-50 ==> whole row = 0 (unstable) [1 in RHS]
 # s^5+7s^4+6s^3+42s^2+8s+56 ==> whole row = 0 (marginally stable) [1 LHS, 4 jw]
-# s^5+2s^4+2s^3+4s^2+11s+10 ==> unstable [2 in RHS]
-# s^4+10s^3+35s^2+50s+264 ==> unstable [2 in RHS]
 # s^4+2s^3+6s^2+4s+1 --> stable system
-# s^6+2s^5+8s^4+12s^3+20s^2+16s+16 --> Marginally stable 
 
 # -------------------- Global Variables --------------------
 coefficients = []
@@ -22,7 +18,7 @@ epsilon = 1e-10
 zero_row = 0 # zero means no row equal zero
 imj_count = 0
 
-# -------------------- function definition --------------------
+# -------------------- function definitions --------------------
 def print_routh_table(routh_array,powers_of_s):
     for i in range(0,len(routh_array)):
         print(powers_of_s[i],"| ",end="")
@@ -60,9 +56,6 @@ def parse_input(input):
         for i in powers_of_s:
             i = i.replace('s^','')
             exponents.append(i)
-        # print("coeffs = " , coeffs)
-        # print("powers_of_s = ", powers_of_s)
-        # print("exponents = ", exponents)
     return coeffs,powers_of_s,exponents
 
 def initialize_routh_array(coeffs):
@@ -84,7 +77,7 @@ def initialize_routh_array(coeffs):
 
 def fix_zero_row(row,previous):
     aux_order = 0
-    # print("The whole row equals zero. So we replace it with the derivative of the previous row")
+    # The whole row equals zero. So we replace it with the derivative of the previous row
     global zero_row # refers to the global variable
     zero_row += 1
     index = len(routh_array)-1
@@ -97,19 +90,13 @@ def fix_zero_row(row,previous):
             if x < len(previous) and np.sign(previous[x+1]) == -1:
                 continue
             equation += '+'
-        if cur_pow < 0: 
-            # print("cur_pow is negative in fn eval_next_row.")
-            # print("I am here")
-            # print("cur_pow = ",cur_pow)
+        if cur_pow < 0:
             continue
     s = symbols('s')
     df = diff(equation,s)
-    print("equation = ",equation)
     derivative = parse_input(str(df))
-    print("derivative = ",derivative)
     exp = [int(i) for i in derivative[2]]
     aux_order = max(exp) + 1
-    # print("aux_order = ",aux_order)
     row = derivative[0]
     while len(row) < len(previous):
         row.append(0)
@@ -142,7 +129,6 @@ def eval_next_row(previous, before_previous):
     # check if a row has all elements = zero 
     if count == len(row):
         row,imj_count = fix_zero_row(row,previous)
-        print("imj_count = ", imj_count)
     return row,imj_count
 
 def isStable(routh_array):
@@ -167,23 +153,19 @@ def isStable(routh_array):
             c = 0
         if not(np.sign(first_column[i]) == 0):
             sign = np.sign(first_column[i])
-        # print("first_column[i] = ", first_column[i])
-        # print("c = ", c)
-        # print("count = ", count)
     if not(c == 0):
         count =+ c
         c = 0
     return first_column,flag,count
 
 
-# -------------------- beginning of the program --------------------   
+# -------------------- Beginning of the program --------------------   
 input = input('Enter characteristic equation:\n')
 coefficients,powers_of_s,exponents = parse_input(input)
 first_row, second_row = initialize_routh_array(coeffs= coefficients)
 routh_array.append(first_row)
 routh_array.append(second_row)
 system_order = max(exponents)
-# print("system order = ",system_order)
 
 if system_order == 1:
     # no need to compute other rows, only the first and second rows
@@ -198,7 +180,7 @@ else:
 first_column,flag,RHS_count = isStable(routh_array)
 
 print("=========================================")
-print("Answers: ")
+print("Answer: ")
 print("Routh Array = ")
 print_routh_table(routh_array,powers_of_s)
 print("System State: ", end="")
